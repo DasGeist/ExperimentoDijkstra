@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 /*
-Código por Sérgio Freitas da Silva Júnior
+Copyright Sérgio Freitas da Silva Júnior (C) - 2019
 Universidade de Brasília - Matrícula 190037971
 
 Escrito no período 26/08/2019 ~ 27/08/2019
