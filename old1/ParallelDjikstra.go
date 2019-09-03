@@ -1,4 +1,4 @@
-package main
+package old1
 
 import "fmt"
 
@@ -7,6 +7,7 @@ Copyright Sérgio Freitas da Silva Júnior (C) - 2019
 Universidade de Brasília - Matrícula 190037971
 
 Escrito no período 26/08/2019 ~ 27/08/2019
+(Pequena correção adicional em 3/09/2019)
 Para eu mesmo no futuro:
 Isso foi antes de começar o conteúdo efetivo de ED
 Essa é a versão antiga. Você deve ter feito a nova no final do semestre.
@@ -72,6 +73,19 @@ func calculateNeighbours(cur *node, ret chan []*node) {
 	ret <- rett
 }
 
+//Versão corrigida
+func calculateNeighboursC(cur *node, ret chan []*node) {
+	rett := make([]*node, 0)
+	for _, c := range cur.conn {
+		if !c.to.mark && (c.to.dist > (cur.dist + 1)) {
+			c.to.dist = cur.dist + 1
+			c.to.mark = true
+			rett = append(rett, c.to)
+		}
+	}
+	ret <- rett
+}
+
 //Checa se um nó está presente numa slice
 func nodeInS(a *node, many []*node) bool {
 	for _, b := range many {
@@ -112,7 +126,10 @@ func backtrackLog(a *node) {
 	fmt.Print("\n\\-/-\\-/-\\-/-\\-/\n")
 }
 
-func main() {
+/*FirstParallel ...
+Executa a primeira versão do programa
+*/
+func FirstParallel() {
 	//Graph A (exemplo)
 	/*
 			{Origem} - [destino]
@@ -206,4 +223,103 @@ func main() {
 	fmt.Print("Djikstra Finished.\nCurrent nodes:\n")
 	pnodes(curNodes, outNode)
 	backtrackLog(outNode)
+}
+
+/*FirstParallelC ...
+Executa a primeira versão do programa (corrigida para evitar um teste desnecessário)
+*/
+func FirstParallelC() {
+	//Graph A (exemplo)
+	/*
+			{Origem} - [destino]
+			{0}      8 -[5]
+			 | \   / |   |
+		     |   6 - 7 - 4
+			 1 - 2 - 3 -/
+	*/
+	nodes := make([]*node, 9)
+	for i := 0; i < 9; i++ {
+		nodes[i] = nNode()
+	}
+
+	connect(nodes[0], nodes[1])
+	connect(nodes[0], nodes[6])
+
+	connect(nodes[1], nodes[2])
+
+	connect(nodes[2], nodes[3])
+
+	connect(nodes[3], nodes[4])
+
+	connect(nodes[4], nodes[5])
+	connect(nodes[4], nodes[7])
+
+	connect(nodes[5], nodes[8])
+
+	connect(nodes[6], nodes[7])
+	connect(nodes[6], nodes[8])
+
+	connect(nodes[7], nodes[8])
+	//End of Graph A
+
+	//Bordas da busca atual (número de threads que se iniciarão)
+	curNodes := make([]*node, 1)
+
+	//Definimos o início como distância 0
+	nodes[0].dist = 0
+	nodes[0].mark = true
+	curNodes[0] = nodes[0] //Definimos o nó incial
+
+	//Nova borda de busca (atualizada a cada thread completa)
+	var nNodes []*node
+
+	//Destino
+	var outNode = nodes[5]
+	//Número de threads completas (devemos esperar todas para o próximo ciclo)
+	var ans int
+
+	//Canal para comunicação entre a principal e as outras threads
+	comm := make(chan []*node)
+
+	//Para sempre
+	for {
+		//Se o fim está na linha de busca, termine
+		if nodeInS(outNode, curNodes) {
+			break
+		}
+		//Ninguém respondeu ainda (eu nem perguntei, ora)
+		ans = 0
+		nNodes = make([]*node, 0)
+
+		//Para cada nó da borda, iniciamos uma thread
+		fmt.Printf("%d",len(curNodes))
+		if len(curNodes)==0{
+			goto end
+		}
+		for _, edge := range curNodes {
+			go calculateNeighboursC(edge, comm)
+		}
+		//Imprimimos os nós que "acordamos"
+		fmt.Print("\n---\n")
+		pnodes(curNodes, outNode)
+		//Para cada resposta
+		for ans < len(curNodes) {
+			ans++
+			for _, nedge := range <-comm { //Esperamos a lista de atualizações
+				for _, cn := range nNodes {
+					if cn.id == nedge.id { //Evitamos valores duplicados
+						goto nextNode
+					}
+				}
+				nNodes = append(nNodes, nedge)
+				nextNode:
+			}
+		}
+		//A nova borda agora é a borda atual
+		curNodes = nNodes
+	}
+	fmt.Print("Djikstra Finished.\nCurrent nodes:\n")
+	pnodes(curNodes, outNode)
+	backtrackLog(outNode)
+	end:
 }
