@@ -220,7 +220,7 @@ func FirstParallel() {
 		//A nova borda agora é a borda atual
 		curNodes = nNodes
 	}
-	fmt.Print("Djikstra Finished.\nCurrent nodes:\n")
+	fmt.Print("Dijkstra Finished.\nCurrent nodes:\n")
 	pnodes(curNodes, outNode)
 	backtrackLog(outNode)
 }
